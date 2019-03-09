@@ -28,12 +28,14 @@ bool found = false;
 
 std::map<byte*,int> mem;
 std::map<byte*,int> newdata;
+std::map<byte*,int> memforprobe;
 std::map<byte*,int>::iterator it;
 
 // ===== Sniffer function ===== //
 void sniffer(uint8_t *buf, uint16_t len) {
   std::map<byte*,int>::iterator itr;
   std::map<byte*,int>::iterator itr2;
+  std::map<byte*,int>::iterator itr3;
   if (!buf || len < 28) return; // Drop packets without MAC header
 
   byte pkt_type = buf[12]; // second half of frame control field
@@ -60,7 +62,7 @@ void sniffer(uint8_t *buf, uint16_t len) {
   }
      
   }
-  else if(pkt_type == 0x80)
+  if(pkt_type == 0x80)
   {
     itr2 = mem.find(addr_b); 
     if(itr2 == mem.end())
@@ -76,6 +78,24 @@ void sniffer(uint8_t *buf, uint16_t len) {
         found = true;  
       }
       mem[addr_b] = itr2->second+1;
+    }
+  }
+  if(pkt_type == 0x40)
+  {
+    itr3 = memforprobe.find(addr_a); 
+    if(itr3 == memforprobe.end())
+    {
+      memforprobe[addr_a] = 1;
+    }
+    else
+    {
+//      Serial.print(itr3->second);
+//      Serial.print(" ");
+      if(itr3->second > 50)
+      {
+        found = true;  
+      }
+      memforprobe[addr_a] = itr3->second+1;
     }
   }
   
@@ -132,6 +152,7 @@ void loop() {
 
       mem.clear();
       newdata.clear();
+      memforprobe.clear();
       found = false;
       period = 0;
     }
