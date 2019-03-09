@@ -33,11 +33,12 @@ std::map<byte*,int>::iterator it;
 // ===== Sniffer function ===== //
 void sniffer(uint8_t *buf, uint16_t len) {
   std::map<byte*,int>::iterator itr;
+  std::map<byte*,int>::iterator itr2;
   if (!buf || len < 28) return; // Drop packets without MAC header
 
   byte pkt_type = buf[12]; // second half of frame control field
   byte* addr_a = &buf[16]; // first MAC address
-  //byte* addr_b = &buf[22]; // second MAC address
+  byte* addr_b = &buf[22]; // second MAC address
 
   // If captured packet is a deauthentication or dissassociaten frame
   if (pkt_type == 0xA0 || pkt_type == 0xC0) {
@@ -59,6 +60,25 @@ void sniffer(uint8_t *buf, uint16_t len) {
   }
      
   }
+  else if(pkt_type == 0x80)
+  {
+    itr2 = mem.find(addr_b); 
+    if(itr2 == mem.end())
+    {
+      mem[addr_b] = 1;
+    }
+    else
+    {
+      //Serial.print(itr2->second);
+      //Serial.print(" ");
+      if(itr2->second > 700)
+      {
+        found = true;  
+      }
+      mem[addr_b] = itr2->second+1;
+    }
+  }
+  
 }
 
 // ===== Attack detection alert ===== //
@@ -109,7 +129,8 @@ void loop() {
       {
         attack_stopped();
       }
-      
+
+      mem.clear();
       newdata.clear();
       found = false;
       period = 0;
