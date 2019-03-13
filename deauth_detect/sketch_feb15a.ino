@@ -32,18 +32,19 @@ int count = 0;
 int deauthCountMax = 0;
 int probeCountMax = 0;
 int beaconCountMax = 0;
+int temp1,temp2,temp3;
 
 
-std::map<byte*,int> mem;
-std::map<byte*,int> newdata;
+std::map<byte*,int> memforbeacon;
+std::map<byte*,int> memfordeauth;
 std::map<byte*,int> memforprobe;
 std::map<byte*,int>::iterator it;
 
 // ===== Sniffer function ===== //
 void sniffer(uint8_t *buf, uint16_t len) {
-  std::map<byte*,int>::iterator itr;
-  std::map<byte*,int>::iterator itr2;
-  std::map<byte*,int>::iterator itr3;
+  std::map<byte*,int>::iterator itrfordeauth;
+  std::map<byte*,int>::iterator itrforbeacon;
+  std::map<byte*,int>::iterator itrforprobe;
   if (!buf || len < 28) return; // Drop packets without MAC header
 
   byte pkt_type = buf[12]; // second half of frame control field
@@ -53,37 +54,29 @@ void sniffer(uint8_t *buf, uint16_t len) {
   // If captured packet is a deauthentication or dissassociaten frame
   if (pkt_type == 0xA0 || pkt_type == 0xC0) {
 
-  itr = newdata.find(addr_a); 
-  if(itr == newdata.end())
+  itrfordeauth = memfordeauth.find(addr_a); 
+  if(itrfordeauth == memfordeauth.end())
   {
-    newdata[addr_a] = 1;
+    memfordeauth[addr_a] = 1;
   }
   else
   {
-    newdata[addr_a] = itr->second+1;
+    temp1 = (int)(itrfordeauth->second+1);
+    memfordeauth[addr_a] = itrfordeauth->second+1;
     if(trainingend == false)
     {
-//      Serial.println("---------------");
-//      Serial.print("traing count =");
-//      Serial.println(count);
-//      Serial.print("deauth count =");
-//      Serial.println(itr->second);
-      if(itr->second > deauthCountMax)
+      if(temp1 > deauthCountMax)
       {
-        deauthCountMax = itr->second; 
+        deauthCountMax = temp1; 
       }
-//      Serial.print("deauth count Max=");
-//      Serial.println( deauthCountMax);
-//      Serial.print("---------------");
     }
     else if(trainingend == true)
     {
-      if(itr->second > deauthCountMax)
+      if(temp1 > deauthCountMax)
       {
         found = true;
-        period = 5;
         Serial.println("Alert now deauth =");
-        Serial.println(itr->second);
+        Serial.println(temp1);
       }
     }
   }
@@ -91,87 +84,59 @@ void sniffer(uint8_t *buf, uint16_t len) {
   }
   if(pkt_type == 0x80)
   {
-    itr2 = mem.find(addr_b); 
-    if(itr2 == mem.end())
+    itrforbeacon = memforbeacon.find(addr_b); 
+    if(itrforbeacon == memforbeacon.end())
     {
-      mem[addr_b] = 1;
+      memforbeacon[addr_b] = 1;
     }
     else
     {
-      //Serial.print(itr2->second);
-      //Serial.print(" ");
-//      if(itr2->second > 700)
-//      {
-//        found = true;  
-//      }
-      mem[addr_b] = itr2->second+1;
+      temp2 = (int)(itrforbeacon->second+1);
+      memforbeacon[addr_b] = itrforbeacon->second+1;
 
       if(trainingend == false)
     {
-//      Serial.println("---------------");
-//      Serial.print(" traing count = ");
-//      Serial.println(count);
-//      Serial.print(" beacon count = ");
-//      Serial.println(itr2->second);
-      if(itr2->second > beaconCountMax)
+      if(temp2 > beaconCountMax)
       {
-        beaconCountMax = itr2->second; 
+        beaconCountMax = temp2; 
       }
-//      Serial.print("beacon count Max=");
-//      Serial.println( beaconCountMax);
-//      Serial.println("---------------");
     }
     else if(trainingend == true)
     {
-      if(itr2->second > beaconCountMax * 5)
+      if(temp2 > beaconCountMax * 5)
       {
         found = true;
-        period = 5;
         Serial.println("Alert now beacon =");
-        Serial.println(itr2->second);
+        Serial.println(temp2);
       }
     }
     }
   }
   if(pkt_type == 0x40)
   {
-    itr3 = memforprobe.find(addr_a); 
-    if(itr3 == memforprobe.end())
+    itrforprobe = memforprobe.find(addr_a); 
+    if(itrforprobe == memforprobe.end())
     {
       memforprobe[addr_a] = 1;
     }
     else
     {
-//      Serial.print(itr3->second);
-//      Serial.print(" ");
-//      if(itr3->second > 50)
-//      {
-//        found = true;  
-//      }
-      memforprobe[addr_a] = itr3->second+1;
+      temp3 = (int)(itrforprobe->second+1);
+      memforprobe[addr_a] = itrforprobe->second+1;
       if(trainingend == false)
     {
-//      Serial.println("---------------");
-//      Serial.print(" traing count = ");
-//      Serial.println(count);
-//      Serial.print(" probe count = ");
-//      Serial.println(itr3->second);
-      if(itr3->second > probeCountMax)
+      if(temp3 > probeCountMax)
       {
-        probeCountMax = itr3->second; 
+        probeCountMax = temp3; 
       }
-//      Serial.print("probe count Max=");
-//      Serial.println( probeCountMax);
-//      Serial.println("---------------");
     }
     else if(trainingend == true)
     {
-      if(itr3->second > probeCountMax * 2)
+      if(temp3 > probeCountMax * 2)
       {
         found = true;
-        period = 5;
         Serial.println("Alert now probe =");
-        Serial.println(itr3->second);
+        Serial.println(temp3);
       }
     }
     }
@@ -201,7 +166,7 @@ void setup() {
   wifi_set_promiscuous_rx_cb(sniffer); // Set sniffer function
   wifi_set_channel(channels[0]);        // Set channel
   wifi_promiscuous_enable(true);       // Enable sniffer
-  //Serial.println("Started \\o/");
+  Serial.println("Started \\o/");
 }
 
 
@@ -228,8 +193,8 @@ void loop() {
       Serial.println(beaconCountMax);
       Serial.println("probeMax=");
       Serial.println(probeCountMax);
-      mem.clear();
-      newdata.clear();
+      memforbeacon.clear();
+      memfordeauth.clear();
       memforprobe.clear();
       if(count == 10)
       {
@@ -254,7 +219,6 @@ void loop() {
       {
         if(found == true)
         {
-          
           attack_started();
         }
         else
@@ -262,8 +226,8 @@ void loop() {
           attack_stopped();
         }
 
-        mem.clear();
-        newdata.clear();
+        memforbeacon.clear();
+        memfordeauth.clear();
         memforprobe.clear();
         found = false;
         period = 0;
