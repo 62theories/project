@@ -12,10 +12,8 @@ device information from a nearby Bluetooth Low Energy Device. You may want to
 check out the <a href="device-info-async-await.html">Device Info (Async
 Await)</a> sample.</p> -->
 
-<form>
-  <label for="allDevices">All Devices</label>
-  <input id="allDevices" type="checkbox">
-  <button>Get Bluetooth Device Info</button>
+<form id="scanForm">
+  <button>Get ALL Bluetooth Device Info</button>
 </form>
 
 <button type="button"
@@ -35,13 +33,12 @@ training</button>
 async function onScanButtonClick() {
   let options = {filters: []};
   bluetoothDevice = null;
-  if (document.querySelector('#allDevices').checked)
-  {
+  
     options = {};
     options.acceptAllDevices = true;
     options.optionalServices = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
     //options.filters.push({optionalServices: '4fafc201-1fb5-459e-8fcc-c5c9c331914b'});
-  }
+  
   try {
     log('Requesting Bluetooth Device...');
     //bluetoothDevice = await navigator.bluetooth.requestDevice(options);
@@ -100,7 +97,7 @@ async function a()
   }
   
 }
-  document.querySelector('form').addEventListener('submit', function(event) {
+  document.getElementById('scanForm').addEventListener('submit', function(event) {
     event.stopPropagation();
     event.preventDefault();
      onScanButtonClick();
