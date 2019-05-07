@@ -16,9 +16,17 @@ Await)</a> sample.</p> -->
   <button>Get ALL Bluetooth Device Info</button>
 </form>
 
+<form id="inputForm">
+  <input id="deauth" type="number" size=17 placeholder="deauth">
+  <input id="beacon" type="number" size=17 placeholder="beacon">
+  <input id="probe" type="number" size=17 placeholder="probe">
+  <button>send value</button>
+</form>
+
 <button type="button"
 onclick="a()">
 training</button>
+
 
 <!-- {% include_relative _includes/datalist-services.html %}
 {% include output_helper.html %}
@@ -97,10 +105,32 @@ async function a()
   }
   
 }
+async function sendValue()
+{
+  let deauth = document.querySelector('#deauth').value;
+  let beacon = document.querySelector('#beacon').value;
+  let probe = document.querySelector('#probe').value;
+  const command2 = Uint8Array([deauth,beacon,probe]);
+  try
+  {
+    const service = await this.bluetoothDevice.gatt.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+  const characteristics = await service.getCharacteristic('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+  await characteristics.writeValue(command2);
+  log('sent');
+  }
+  catch(error) {
+    log('Argh! ' + error);
+  }
+  
+}
   document.getElementById('scanForm').addEventListener('submit', function(event) {
     event.stopPropagation();
     event.preventDefault();
      onScanButtonClick();
+     //clearLog();
+  });
+  document.getElementById('inputForm').addEventListener('submit', function(event) {
+     sendValue();
      //clearLog();
   });
 </script>
